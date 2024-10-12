@@ -20,20 +20,27 @@ package com.amazon.sample.ui.services.assets;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.web.reactive.function.client.ExchangeStrategies;
-import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import java.util.concurrent.TimeUnit;
+import java.io.IOException;
+import java.nio.file.Files;
 
-public class MockAssetsService implements AssetsService<ClassPathResource> {
+public class MockAssetsService implements AssetsService<byte[]> {
 
-    public Mono<ResponseEntity<ClassPathResource>> getImage(String image) {
-      ClassPathResource classPathResource = new ClassPathResource("static/assets/img/sample_product.jpg");
-      
-      return Mono.just(new ResponseEntity<ClassPathResource>(classPathResource, HttpStatus.OK));
+    public Mono<ResponseEntity<byte[]>> getImage(String image) {
+        ClassPathResource classPathResource = new ClassPathResource("static/assets/img/sample_product.jpg");
+        
+        return Mono.fromCallable(() -> {
+            try {
+                byte[] imageBytes = Files.readAllBytes(classPathResource.getFile().toPath());
+                return ResponseEntity.ok()
+                    .contentType(MediaType.IMAGE_JPEG)
+                    .body(imageBytes);
+            } catch (IOException e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            }
+        });
     }
 }

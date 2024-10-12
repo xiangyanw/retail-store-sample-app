@@ -40,6 +40,8 @@ import com.amazon.sample.ui.services.checkout.model.CheckoutMapper;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
+import software.amazon.awssdk.services.s3.S3Client;
 
 @Configuration
 public class StoreServices {
@@ -62,7 +64,6 @@ public class StoreServices {
         return new WebClientCartsService(cartsApi, itemsApi, catalogService);
     }
 
-
     @Bean
     @ConditionalOnProperty(prefix = "endpoints", name = "carts", havingValue = "false", matchIfMissing = true)
     public CartsService mockCartsService(CatalogService catalogService) {
@@ -83,13 +84,13 @@ public class StoreServices {
 
     @Bean
     @ConditionalOnProperty(prefix = "endpoints", name = "assets")
-    public AssetsService<?> assetsService() {
-        return new ProxyingAssetsService();
+    public AssetsService<byte[]> assetsService(S3Client s3Client, Environment env) {
+        return new ProxyingAssetsService(s3Client, env);
     }
 
     @Bean
     @ConditionalOnProperty(prefix = "endpoints", name = "assets", havingValue = "false", matchIfMissing = true)
-    public AssetsService<?> mockAssetsService() {
+    public AssetsService<byte[]> mockAssetsService() {
         return new MockAssetsService();
     }
 }
