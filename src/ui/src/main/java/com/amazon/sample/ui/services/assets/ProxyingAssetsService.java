@@ -19,34 +19,52 @@
 package com.amazon.sample.ui.services.assets;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
-import org.springframework.web.reactive.function.client.ExchangeStrategies;
-import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+
+import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
+
+@Service
 public class ProxyingAssetsService implements AssetsService<byte[]> {
 
-    @Value("${endpoints.assets}")
-    private String assetsEndpoint;
+    private static final Logger logger = LoggerFactory.getLogger(ProxyingAssetsService.class);
 
+    private final S3Client s3Client;
+    private final Environment env;
+
+    @Autowired
+    public ProxyingAssetsService(S3Client s3Client, Environment env) {
+        this.s3Client = s3Client;
+        this.env = env;
+    }
+
+    @Override
     public Mono<ResponseEntity<byte[]>> getImage(String image) {
-      return WebClient.builder()
-            .exchangeStrategies(ExchangeStrategies.builder()
-            .codecs(configurer -> configurer
-                .defaultCodecs()
-                .maxInMemorySize(16 * 1024 * 1024))
-            .build())
-                .baseUrl(this.assetsEndpoint+"/assets/"+image)
-            .build().get()
-                .accept(MediaType.IMAGE_JPEG)
-                .retrieve()
-                .bodyToMono(byte[].class)
-                .map(payload -> ResponseEntity.ok()
-                    .cacheControl(CacheControl.maxAge(30, TimeUnit.DAYS))
-                    .body(payload));
+        String bucketName = env.getProperty("S3_BUCKET_NAME");
+        logger.info("Downloading image from S3 bucket {}: {}", bucketName, image);
+
+        return Mono.fromCallable(() -> {
+            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                .bucket(bucketName)
+                .key(image)
+                .build();
+
+            ResponseBytes<GetObjectResponse> objectBytes = s3Client.getObjectAsBytes(getObjectRequest);
+            byte[] data = objectBytes.asByteArray();
+
+            return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_JPEG)
+                .body(data);
+        });
     }
 }
