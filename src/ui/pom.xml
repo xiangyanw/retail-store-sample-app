@@ -140,6 +140,17 @@
 			<artifactId>bootstrap-icons</artifactId>
 			<version>1.11.3</version>
 		</dependency>
+		<!-- Add Spring Cloud Sleuth and Zipkin dependencies -->
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-sleuth</artifactId>
+			<version>3.1.9</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-sleuth-zipkin</artifactId>
+			<version>3.1.9</version>
+		</dependency>
 	</dependencies>
 
 	<build>

@@ -90,6 +90,7 @@ public class Clients {
                         exchangeFilterFunctions.add(logRequest());
                         exchangeFilterFunctions.add(logResponse());
                     }
+                    exchangeFilterFunctions.add(TracingFilter.propagateTracingHeaders());
                 })
                 .build();
     }

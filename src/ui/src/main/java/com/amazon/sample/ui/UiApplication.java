@@ -20,12 +20,20 @@ package com.amazon.sample.ui;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.web.server.WebFilter;
+import com.amazon.sample.ui.config.TracingFilter;
 
 @SpringBootApplication
 public class UiApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(UiApplication.class, args);
+	}
+
+	@Bean
+	public WebFilter tracingFilter() {
+		return new TracingFilter();
 	}
 
 }
